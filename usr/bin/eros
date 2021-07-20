@@ -1,6 +1,7 @@
 #!/usr/bin/xonsh
 
 from termcolor import colored
+import inspect
 
 def red(text):
     return colored(text, "red")
@@ -8,47 +9,61 @@ def red(text):
 def get_name():
     return $(basename $PWD)[:-1]
 
-if $ARG1 == "launch": 
-    if ![$ARG0 test].returncode != 0:
-        read -p "There are failed tests. Do you want to stop the launch? [y/N] " -n 1 -r
-        echo
-        if $REPLY in ("Y", "y"):
+class library_factory:
+    def __call__(self, action, *args):
+        try:
+            getattr(self, action, self.help)(*args)
+        except TypeError:
+            self.help()
+
+    def help(self, *args):
+        """displays help message"""
+
+        print("Usage:", red($ARG0), "<action> [args]")
+        print("Actions:")
+
+        for action in dir(self):
+            if action.startswith("_") or not callable(getattr(self, action)): continue
+            print("-", red(action) + str(inspect.signature(getattr(self, action))), "-", getattr(self, action).__doc__)
+
+    def launch(self):
+        """launches current game"""
+        print("Launching", red(get_name()))
+        exit(![love .].returncode)
+
+    def commit(self, *text):
+        """adds, commits & pushes"""
+        text = " ".join(text)
+        git add .
+        git commit -m @(text)
+        git push origin master
+
+    def test(self):
+        """launches engine & game tests"""
+        print("Starting", red("EROS"), "tests via", red("busted"))
+        result1 = ![love . selftest].returncode
+
+        print("Starting", red(get_name()), "tests via", red("busted"))
+        result2 = ![love . test].returncode
+
+        if result1 + result2:
             exit(1)
-    print("Launching", red(get_name()))
-    exit(![love .].returncode)
 
-if $ARG1 == "commit":
-    if ![$ARG0 test].returncode != 0:
-        read -p "There are failed tests. Do you want to stop the commit? [y/N] " -n 1 -r
-        echo
-        if $REPLY in ("Y", "y"):
-            exit(1)
-    git add .
-    git commit -m $ARG2
-    git push origin master
+    def build(self):
+        """creates Windows executable"""
+        print("Starting", red(get_name()), "build")
 
-    exit(0)
+        mkdir -p bin/build
+        print("Creating love file")
+        zip -9 -r @("bin/build/" + get_name() + ".love") . -q
+        cat eros/bin/love.exe @("bin/build/" + get_name() + ".love") > @("bin/" + get_name() + ".exe")
+        rm -r bin/build
 
-if $ARG1 == "test":
-    print("Starting", red("EROS"), "tests via", red("busted"))
-    result1 = ![love . selftest].returncode
+        print("Creating final zip archive")
+        rm -rf @("bin/" + get_name() + ".zip")
+        zip -9 -r @("bin/" + get_name() + ".zip") bin -q
+        print("Build finished!")
 
-    print("Starting", red(get_name()), "tests via", red("busted"))
-    result2 = ![love . test].returncode
 
-    if result1 * result2:
-        exit(1)
-
-if $ARG1 == "build":
-    print("Starting", red(get_name()), "build")
-
-    mkdir -p bin/build
-    print("Creating love file")
-    zip -9 -r @("bin/build/" + get_name() + ".love") . -q
-    cat eros/bin/love.exe @("bin/build/" + get_name() + ".love") > @("bin/" + get_name() + ".exe")
-    rm -r bin/build
-
-    print("Creating final zip archive")
-    rm -rf @("bin/" + get_name() + ".zip")
-    zip -9 -r @("bin/" + get_name() + ".zip") bin -q
-    print("Build finished!")
+library_factory()(*$ARGS[1:])
+exit(0)
