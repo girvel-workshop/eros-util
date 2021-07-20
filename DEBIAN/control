@@ -1,0 +1,11 @@
+Package: eros 
+Version: 1.1
+Section: custom 
+Priority: optional 
+Architecture: all 
+Essential: no 
+Installed-Size: 1024 
+Maintainer: girvel
+Description: Development optimization utility for EROS game engine
+
+
