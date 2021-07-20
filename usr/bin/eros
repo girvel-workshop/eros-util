@@ -58,7 +58,7 @@ class library_factory:
     def launch(self):
         """launches current game"""
         print("Launching", red(get_name()))
-        exit(sh.love(".").return_code)
+        os.system("love .")
 
     def commit(self, *text):
         """adds, commits & pushes"""
@@ -69,13 +69,10 @@ class library_factory:
     def test(self):
         """launches engine & game tests"""
         print("Starting", red("EROS"), "tests via", red("busted"))
-        result1 = sh.love(".", "selftest").return_code
+        os.system("love . selftest")
 
         print("Starting", red(get_name()), "tests via", red("busted"))
-        result1 = sh.love(".", "test").return_code
-
-        if result1 + result2:
-            exit(1)
+        os.system("love . test")
 
     def build(self):
         """creates Windows executable"""
