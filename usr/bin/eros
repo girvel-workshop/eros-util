@@ -71,9 +71,6 @@ class library_factory:
         print("Starting", red("EROS"), "tests via", red("busted"))
         os.system("love . selftest")
 
-        print("Starting", red(get_name()), "tests via", red("busted"))
-        os.system("love . test")
-
     def build(self):
         """creates Windows executable"""
         print("Starting", red(get_name()), "build")
