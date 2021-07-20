@@ -6,6 +6,7 @@ from smart_env import ENV as env
 from bash import bash
 from python_shell import Shell as sh  # TODO remove it
 import sys
+import os
 
 def red(text):
     return colored(text, "red")
@@ -14,7 +15,7 @@ def grey(text):
     return colored(text, 'white', attrs=['dark'])
 
 def get_name():
-    return sh.basename(env.PWD)[:-1]
+    return str(bash('basename $PWD'))
 
 def ask_for_confirmation(prompt, preferred):  # TODO to library
     if preferred:
@@ -32,11 +33,13 @@ def find_all(text, substring):
 
 class library_factory:
     def __call__(self, action, *args):
-        self.working_directory = "."
-        try:
-            getattr(self, action, self.help)(*args)
-        except TypeError:
-            self.help()
+        self.working_directory = str(bash('git rev-parse --show-toplevel'))
+        os.chdir(self.working_directory)
+
+        # try:
+        getattr(self, action, self.help)(*args)
+        # except TypeError:
+        #     self.help()
 
     def help(self, *args):
         """displays help message"""
@@ -100,7 +103,7 @@ class library_factory:
 
     def mv(self, from_, to):
         """renames reference"""
-        for filepath in str(bash(f'find {self.working_directory} -name "*.lua" -print0 | xargs -0 ls')).split():
+        for filepath in str(bash(f'find . -name "*.lua" -print0 | xargs -0 ls')).split():
             filepath = filepath[2:]
 
             content = str(bash('cat ' + filepath))
@@ -137,6 +140,12 @@ class library_factory:
 
             if concurrences:
                 print()
+
+    def stat(self):
+        print("project", red(get_name()))
+        print(red("Lines:"), bash("( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -l"))
+        print(red("Words:"), bash("( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -w"))
+        print(red("Chars:"), bash("( find ./ -name '*.lua' -print0 | xargs -0 cat ) | wc -m"))
 
 if __name__ == '__main__':
     library_factory()(*sys.argv[1:])
