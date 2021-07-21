@@ -15,7 +15,7 @@ def grey(text):
     return colored(text, 'white', attrs=['dark'])
 
 def get_name():
-    return str(bash('basename $PWD'))
+    return str(bash('basename $(git rev-parse --show-toplevel)'))
 
 def ask_for_confirmation(prompt, preferred):  # TODO to library
     if preferred:
@@ -73,27 +73,70 @@ class library_factory:
 
     def build(self):
         """creates Windows executable"""
+        name = get_name()
         print("Starting", red(get_name()), "build")
 
-        sh.mkdir("-p", "bin/build")
+        os.system("mkdir source")
+        os.system("cp -r ./* source")
+        os.chdir("source")
+        os.system(
+            "rm -rf documentation bin .git .gitignore README.md "
+            "war-routine.sublime-* eros/bin source build"
+            "*.exe *.love *.zip"
+        )
+
+        os.system("mkdir ../build")
 
         print("Creating love file")
 
-        love = f"bin/build/{get_name()}.love"
-        sh.zip("-9", "-r", love, ".", "-q")
+        os.system(f"zip -9 -r ../build/{name}.love . -q")
+        os.chdir("..")
 
         print("Creating exe file")
 
-        sh.cat("eros/bin/love.exe", love, ">", f"bin/{get_name()}.exe")
-        sh.rm("-r", "bin/build")
+        os.system(f"cat eros/bin/love.exe build/{name}.love > bin/{name}.exe")
 
         print("Creating final zip archive")
 
-        zip_ = f"bin/{get_name()}.zip"
-        sh.rm("-rf", zip_)
-        sh.zip("-9", "-r", zip_, "bin", "-q")
+        os.system(f"rm -rf {name}.zip")
+        os.system(f"zip -9 -r {name}.zip bin -q")
+
+        print("Removing temp files")
+
+        os.system("rm -rf source")
+        os.system("rm -rf build")
 
         print("Build finished!")
+
+        # sh.mkdir("-p", "bin/source")
+        # os.system("cp -r ./* bin/source/")
+
+        # os.chdir("bin/source")
+        # os.system(
+        #     "rm -rf documentation bin .git .gitignore README.md "
+        #     "war-routine.sublime-* eros/bin"
+        # )
+
+        # os.system("mkdir -p bin/build")
+
+        # print("Creating love file")
+
+        # love = f"bin/build/{get_name()}.love"
+        # os.system(f"zip -9 -r {love} bin/source/ -q")
+        # os.chdir("..")
+
+        # print("Creating exe file")
+
+        # sh.cat("eros/bin/love.exe", love, ">", f"bin/{get_name()}.exe")
+        # sh.rm("-r", "bin/build")
+
+        # print("Creating final zip archive")
+
+        # zip_ = f"bin/{get_name()}.zip"
+        # sh.rm("-rf", zip_)
+        # sh.zip("-9", "-r", zip_, "bin", "-q")
+
+        # print("Build finished!")
 
     def mv(self, from_, to):
         """renames reference"""
