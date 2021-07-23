@@ -55,10 +55,10 @@ class library_factory:
                 getattr(self, action).__doc__
             ))
 
-    def launch(self):
+    def launch(self, *options):
         """launches current game"""
         print("Launching", red(get_name()))
-        os.system("love .")
+        os.system("love . " + " ".join(repr(o) for o in options))
 
     def commit(self, *text):
         """adds, commits & pushes"""
