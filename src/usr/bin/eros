@@ -66,10 +66,10 @@ class library_factory:
         sh.git("commit", "-m", " ".join(text))
         sh.git("push", "origin", "master")
 
-    def test(self):
+    def test(self, *options):
         """launches engine & game tests"""
-        print("Starting", red("EROS"), "tests via", red("busted"))
-        os.system("love . selftest")
+        print("Starting", red("EROS"), "tests")
+        os.system("love . selftest " + " ".join(repr(o) for o in options))
 
     def build(self):
         """creates Windows executable"""
