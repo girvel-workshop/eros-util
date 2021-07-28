@@ -62,9 +62,9 @@ class library_factory:
 
     def commit(self, *text):
         """adds, commits & pushes"""
-        sh.git("add", ".")
-        sh.git("commit", "-m", " ".join(text))
-        sh.git("push", "origin", "master")
+        os.system("git add .")
+        os.system(f'git commit -m "{" ".join(text)}"')
+        os.system("git push origin master")
 
     def test(self, *options):
         """launches engine & game tests"""
