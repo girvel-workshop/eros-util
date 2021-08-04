@@ -5,7 +5,7 @@ require "strong"
 local sh = require "sh"
 -- TODO dependencies
 
-local prompt, config
+local prompt, config, state
 
 behaviour = {
 	init=function()
@@ -13,7 +13,8 @@ behaviour = {
 		print(mkdir("-p .crater"))
 
 		config.set{
-			name=prompt("project name")
+			name=prompt("project name", tostring(basename("$PWD"))),
+			version=prompt("version", "0.1-0")
 		}
 	end
 }
@@ -22,7 +23,7 @@ function prompt(query, default_value)
 	io.write(query)
 
 	if default_value then
-		io.write(" [%s]" % default_value)
+		io.write(" [", default_value, "]")
 	end
 	print(":")
 
@@ -38,7 +39,10 @@ end
 
 config = setmetatable({
 	get=function()
-
+		local file = io.open(".crater/config.yaml", "r")
+		local result = file:read("*a")
+		file:close()
+		return result
 	end,
 	set=function(t)
 		local file = io.open(".crater/config.yaml", "w")
@@ -54,6 +58,18 @@ config = setmetatable({
 		local content = config.get()
 		content[index] = value
 		config.set(content)
+	end
+})
+
+-- TODO property container
+state = setmetatable({
+	
+}, {
+	__index=function(self, index)
+		return self["get_" .. index]()
+	end,
+	__newindex=function(self, index, value)
+		return self["set_" .. index](value)
 	end
 })
 
