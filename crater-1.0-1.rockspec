@@ -15,6 +15,7 @@ dependencies={
 build={
 	type="builtin",
 	modules={
-		crater="crater.lua"
+		crater="crater.lua",
+		_girvel="_girvel.lua"
 	}
 }

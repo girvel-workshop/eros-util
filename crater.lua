@@ -1,8 +1,9 @@
 local g = require "_girvel"
+local sh = require "sh"
 
 behaviour = {
-	init=function(dummy_argument)
-		print(dummy_argument)
+	init=function()
+		print(git("init"))
 	end
 }
 
