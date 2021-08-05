@@ -17,19 +17,21 @@ behaviour = {
 		config:set_yaml{
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
-			type=prompt("type (lua|love|unix)"),
-			platforms=prompt("platforms (git, luarocks)"):split("%s*,%s*") / g.set()
+			build_systems=prompt("build systems (love, luarocks, dpkg)", "luarocks")
+				:split("%s*,%s*") / g.set(),
+			tech=prompt("tech (git, luarocks)", "git, luarocks")
+				:split("%s*,%s*") / g.set()
 		}
 		keychain:set_yaml{}
 
-		if config.platforms["git"] then
+		if config.tech["git"] then
 			config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
 			git("remote add origin " .. config.git_origin)
 
 			echo(keychain.path):tee("-a .gitignore")
 		end
 
-		if config.platforms["luarocks"] then
+		if config.tech["luarocks"] then
 			keychain.luarocks = prompt("luarocks API key")
 			rockspec = g.file_container("%s-%s.rockspec" % {config.name, config.version})
 			rockspec:set([[
@@ -69,17 +71,19 @@ build={
 		
 	build=fnl.docs[[builds]] .. function(type)
 		type = type or "build"
+
+		for build_type, _ in pairs(config.build_systems) do
+			behaviour["build-" .. build_type]()
+		end
 		
 		local index = ({major=1, minor=2, build=3})[type]
 		local version = state.get_version()
 		version[index] = version[index] + 1
 		state.set_version(version)
-		
-		return behaviour["build." .. config.type]
 	end,
 
-	["build.unix"]=function()
-		print("UNIX BUILD")
+	["build-dpkg"]=function()
+		mkdir("-p .crater/build-dpkg/")
 	end,
 	
 	help=fnl.docs[[show help]] .. function()
