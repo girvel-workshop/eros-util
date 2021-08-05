@@ -23,10 +23,10 @@ behaviour = {
 		keychain:set{}
 
 		if config.platforms["git"] then
-			config.git_origin = prompt("git repository")
+			config.git_origin = prompt("git repository", git("remote get-url origin"))
 			git("remote add origin " .. config.git_origin)
 
-			echo(keychain.path):tee(".gitignore")
+			echo(keychain.path):tee("-a .gitignore")
 		end
 
 		if config.platforms["luarocks"] then
