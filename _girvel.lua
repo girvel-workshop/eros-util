@@ -1,7 +1,11 @@
 local fnl = require "fnl"
+local yaml = require "lyaml"
+local inspect = require "inspect"
 
 local _girvel = {}
 
+-- TODO piped inspect
+-- TODO optimization: pipe + ipairs
 _girvel.slice = 
 	fnl.docs{
 		type='pipe function',
@@ -9,9 +13,13 @@ _girvel.slice =
 	} ..
 	fnl.pipe() ..
 	function(t, first, last, step)
+		if last and last < 0 then
+			last = #t - last + 1
+		end
+	
 		local result = {}
 		for i = first or 1, last or #t, step or 1 do
-			result[#result + 1] = t[i]
+			table.insert(result, t[i])
 		end
 		return result
 	end
@@ -37,6 +45,84 @@ _girvel.set =
 			result[v] = true
 		end
 		return result
+	end
+
+_girvel.map = 
+	fnl.docs{} ..
+	fnl.pipe() ..
+	function(t, f)
+		local result = {}
+		for ix, it in ipairs(t) do
+			table.insert(result, f(it))
+		end
+		return result
+	end
+
+_girvel.separate = 
+	fnl.docs{
+		type='pipe function'
+	} ..
+	fnl.pipe() ..
+	function(t, separator)
+		if #t == 0 then return {} end
+	
+		local result = {t[1]}
+		for i = 2, #t do
+			table.insert(result, separator)
+			table.insert(result, t[i])
+		end
+		return result
+	end
+
+_girvel.join = 
+	fnl.docs{} ..
+	fnl.pipe() ..
+	function(t, metamethod)
+		metamethod = metamethod or "__add"
+		
+		if #t == 0 then return end
+
+		local result = t[1]
+		
+		for i = 2, #t do
+			result = getmetatable(result)[metamethod](result, t[i])
+		end
+		return result
+	end
+
+_girvel.yaml_container = 
+	fnl.docs{
+		type='function',
+		description='reads & writes to yaml file',
+		args={'path to the file'}
+	} ..
+	function(path)
+		local folder_path = (path / "/") / _girvel.slice(nil, -2)
+	
+		return setmetatable({
+			get=function()
+				local file = io.open(".crater/config.yaml", "r")
+				local result = file:read("*a")
+				file:close()
+				return yaml.load(result)
+			end,
+			set=function(t)
+				print(mkdir("-p .crater"))
+				local file = io.open(".crater/config.yaml", "w")
+				file:write(yaml.dump{t}:sub(5, -5))
+				file:write("\n")
+				file:close()
+			end
+		}, {
+			__index=function(_, index)
+				return config.get()[index]
+			end,
+			__newindex=function(_, index, value)
+				local content = config.get()
+				content[index] = value
+				config.set(content)
+			end
+		})
 	end
 
 return _girvel

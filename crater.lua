@@ -48,30 +48,7 @@ function prompt(query, default_value)
 	return input
 end
 
-config = setmetatable({
-	get=function()
-		local file = io.open(".crater/config.yaml", "r")
-		local result = file:read("*a")
-		file:close()
-		return yaml.load(result)
-	end,
-	set=function(t)
-		print(mkdir("-p .crater"))
-		local file = io.open(".crater/config.yaml", "w")
-		file:write(yaml.dump{t}:sub(5, -5))
-		file:write("\n")
-		file:close()
-	end
-}, {
-	__index=function(_, index)
-		return config.get()[index]
-	end,
-	__newindex=function(_, index, value)
-		local content = config.get()
-		content[index] = value
-		config.set(content)
-	end
-})
+config = g.yaml_container()
 
 -- TODO property container
 state = setmetatable({
