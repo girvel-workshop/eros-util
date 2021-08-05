@@ -1,21 +1,32 @@
 local g = require "_girvel"
+local fnl = require "fnl"
 local yaml = require "lyaml"
 require "strong"
 
+local http = require "socket.http"
+local ltn12 = require "ltn12"
+
 local sh = require "sh"
 -- TODO dependencies
+-- TODO .gitignore
+-- TODO cd to root directory
 
 local prompt, config, state
 
 behaviour = {
 	init=function()
 		print(git("init"))
-		print(mkdir("-p .crater"))
 
 		config.set{
 			name=prompt("project name", tostring(basename("$PWD"))),
-			version=prompt("version", "0.1-0")
+			version=prompt("version", "0.1-0"),
+			type=prompt("type (lua|love)"),
+			platforms=prompt("platforms (github, luarocks)"):split("%s*,%s*") / g.set()
 		}
+
+		if config.platforms["github"] then
+			
+		end
 	end
 }
 
@@ -42,9 +53,10 @@ config = setmetatable({
 		local file = io.open(".crater/config.yaml", "r")
 		local result = file:read("*a")
 		file:close()
-		return result
+		return yaml.load(result)
 	end,
 	set=function(t)
+		print(mkdir("-p .crater"))
 		local file = io.open(".crater/config.yaml", "w")
 		file:write(yaml.dump{t}:sub(5, -5))
 		file:write("\n")
@@ -66,10 +78,10 @@ state = setmetatable({
 	
 }, {
 	__index=function(self, index)
-		return self["get_" .. index]()
+		return self["get_" .. index](self)
 	end,
 	__newindex=function(self, index, value)
-		return self["set_" .. index](value)
+		return self["set_" .. index](self, value)
 	end
 })
 

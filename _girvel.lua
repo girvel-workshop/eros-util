@@ -16,6 +16,7 @@ _girvel.slice =
 		return result
 	end
 
+-- TODO pipe functions as normal functions
 _girvel.unpack =
 	fnl.docs{
 		type='pipe function',
@@ -23,5 +24,19 @@ _girvel.unpack =
 	} ..
 	fnl.pipe() ..
 	table.unpack or unpack
+
+_girvel.set =
+	fnl.docs{
+		type='pipe function',
+		description='transforms the sequence to a set'
+	} ..
+	fnl.pipe() ..
+	function(t)
+		local result = {}
+		for _, v in ipairs(t) do
+			result[v] = true
+		end
+		return result
+	end
 
 return _girvel
