@@ -97,10 +97,10 @@ _girvel.file_container =
 		description='creates a table to read & write a file'
 	} ..
 	function(path)
-		local folder_path = (path / "/") 
+		local folder_path = path / "/"
 			/ _girvel.slice(1, -2)
 			/ _girvel.separate("/")
-			/ _girvel.join()
+			/ _girvel.join() or "."
 
 		return {
 			path=path,

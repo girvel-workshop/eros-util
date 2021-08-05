@@ -8,7 +8,7 @@ local sh = require "sh"
 -- TODO .gitignore
 -- TODO cd to root directory
 
-local behaviour, prompt, config, keychain, state
+local behaviour, prompt, config, keychain, state, rockspec
 
 behaviour = {
 	init=fnl.docs[[make current directory a crate]] .. function()
@@ -23,7 +23,7 @@ behaviour = {
 		keychain:set_yaml{}
 
 		if config.platforms["git"] then
-			config.git_origin = prompt("git repository", git("remote get-url origin"))
+			config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
 			git("remote add origin " .. config.git_origin)
 
 			echo(keychain.path):tee("-a .gitignore")
@@ -31,8 +31,8 @@ behaviour = {
 
 		if config.platforms["luarocks"] then
 			keychain.luarocks = prompt("luarocks API key")
-			local file = io.open("%s-%s.rockspec" % {config.name, config.version}, "w")
-			file:write([[
+			rockspec = g.file_container("%s-%s.rockspec" % {config.name, config.version})
+			rockspec:set([[
 package="%s"
 version="%s"
 source={
@@ -50,7 +50,6 @@ build={
 	}
 }
 			]] % {config.name, config.version, config.git_origin, config.version})
-			file:close()
 		end
 	end,
 	
@@ -68,12 +67,19 @@ build={
 		print("Chars:", content:wc("-m"))
 	end,
 		
-	build=fnl.docs[[builds]] .. function()
+	build=fnl.docs[[builds]] .. function(type)
+		type = type or "build"
+		
+		local index = ({major=1, minor=2, build=3})[type]
+		local version = state.get_version()
+		version[index] = version[index] + 1
+		state.set_version(version)
+		
 		return behaviour["build." .. config.type]
 	end,
 
 	["build.unix"]=function()
-		
+		print("UNIX BUILD")
 	end,
 	
 	help=fnl.docs[[show help]] .. function()
@@ -107,14 +113,21 @@ end
 
 config = g.yaml_container('.crater/config.yaml')
 keychain = g.yaml_container('.crater/keychain.yaml')
-state = g.property_container{
-	get_version=function(self)
-		return config.version:gsub("-") / "." / g.map(tonumber)
+rockspec = g.file_container(tostring(ls('*.rockspec')))
+
+state = {
+	get_version=function()
+		return config.version:gsub("-", ".") / "." / g.map(tonumber)
 	end,
-	set_version=function(self, value)
+	set_version=function(value)
+		local old_version = config.version
 		config.version = "%s.%s-%s" % value
-		mv("*.rockspec", "%s-%s.rockspec" % {config.name, config.version})
-		
+		rockspec.path = "%s-%s.rockspec" % {config.name, config.version}
+		mv("*.rockspec", rockspec.path)
+		rockspec:set(rockspec:get()
+			:gsub('version="%S*"', 'version="%s"' % config.version)
+			:gsub('tag="%S*"', 'tag="%s"' % config.version)
+		)
 	end
 }
 
