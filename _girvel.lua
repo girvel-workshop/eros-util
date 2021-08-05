@@ -1,6 +1,7 @@
 local fnl = require "fnl"
 local yaml = require "lyaml"
 local inspect = require "inspect"
+local exception = require "exception"
 
 local _girvel = {}
 
@@ -107,8 +108,12 @@ _girvel.yaml_container =
 			folder_path=folder_path,
 			get=function(self)
 				local file = io.open(self.path, "r")
+
+				if not file then
+					exception.throw{message="YAML file %s does not exist" % self.path}
+				end
+				
 				local result = file:read("*a")
-				file:close()
 				return yaml.load(result)
 			end,
 			set=function(self, t)

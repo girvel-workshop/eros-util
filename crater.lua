@@ -58,6 +58,13 @@ build={
 		print(git('commit -m "%s"' % name))
 		print(git('push origin master'))
 	end,
+	stat=fnl.docs[[show crate statistics]] .. function()
+		print("crate", config.name)
+		local content = find("./ -name '*.lua' -print0"):xargs("-0 cat")
+		print("Lines:", content:wc("-l"))
+		print("Words:", content:wc("-w"))
+		print("Chars:", content:wc("-m"))
+	end,
 	help=fnl.docs[[show help]] .. function()
 		for name, f in pairs(behaviour) do
 			print(name, "-", fnl.docs[f])
