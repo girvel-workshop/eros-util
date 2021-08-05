@@ -17,14 +17,14 @@ behaviour = {
 	init=function()
 		print(git("init"))
 
-		config.set{
+		config:set{
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
 			type=prompt("type (lua|love)"),
-			platforms=prompt("platforms (github, luarocks)"):split("%s*,%s*") / g.set()
+			platforms=prompt("platforms (git, luarocks)"):split("%s*,%s*") / g.set()
 		}
 
-		if config.platforms["github"] then
+		if config.platforms["git"] then
 			
 		end
 	end
@@ -48,7 +48,7 @@ function prompt(query, default_value)
 	return input
 end
 
-config = g.yaml_container()
+config = g.yaml_container('.crater/config.yaml')
 
 -- TODO property container
 state = setmetatable({

@@ -14,7 +14,7 @@ _girvel.slice =
 	fnl.pipe() ..
 	function(t, first, last, step)
 		if last and last < 0 then
-			last = #t - last + 1
+			last = #t + last + 1
 		end
 	
 		local result = {}
@@ -93,34 +93,39 @@ _girvel.join =
 _girvel.yaml_container = 
 	fnl.docs{
 		type='function',
-		description='reads & writes to yaml file',
+		description='creates a table to read & write to yaml file',
 		args={'path to the file'}
 	} ..
 	function(path)
-		local folder_path = (path / "/") / _girvel.slice(nil, -2)
+		local folder_path = (path / "/") 
+			/ _girvel.slice(1, -2)
+			/ _girvel.separate("/")
+			/ _girvel.join()
 	
 		return setmetatable({
-			get=function()
-				local file = io.open(".crater/config.yaml", "r")
+			path=path,
+			folder_path=folder_path,
+			get=function(self)
+				local file = io.open(self.path, "r")
 				local result = file:read("*a")
 				file:close()
 				return yaml.load(result)
 			end,
-			set=function(t)
-				print(mkdir("-p .crater"))
-				local file = io.open(".crater/config.yaml", "w")
+			set=function(self, t)
+				print(mkdir("-p " .. self.folder_path))
+				local file = io.open(self.path, "w")
 				file:write(yaml.dump{t}:sub(5, -5))
 				file:write("\n")
 				file:close()
 			end
 		}, {
-			__index=function(_, index)
-				return config.get()[index]
+			__index=function(self, index)
+				return self:get()[index]
 			end,
-			__newindex=function(_, index, value)
-				local content = config.get()
+			__newindex=function(self, index, value)
+				local content = self:get()
 				content[index] = value
-				config.set(content)
+				self:set(content)
 			end
 		})
 	end
