@@ -8,16 +8,16 @@ local sh = require "sh"
 -- TODO .gitignore
 -- TODO cd to root directory
 
-local prompt, config, keychain, state
+local behaviour, prompt, config, keychain, state
 
 behaviour = {
-	init=function()
+	init=fnl.docs[[make current directory a crate]] .. function()
 		print(git("init"))
 
 		config:set{
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
-			type=prompt("type (lua|love)"),
+			type=prompt("type (lua|love|unix)"),
 			platforms=prompt("platforms (git, luarocks)"):split("%s*,%s*") / g.set()
 		}
 		keychain:set{}
@@ -53,10 +53,15 @@ build={
 			file:close()
 		end
 	end,
-	commit=function(name)
+	commit=fnl.docs[[alias for git add, commit & push]] .. function(name)
 		print(git("add ."))
 		print(git('commit -m "%s"' % name))
 		print(git('push origin master'))
+	end,
+	help=fnl.docs[[show help]] .. function()
+		for name, f in pairs(behaviour) do
+			print(name, "-", fnl.docs[f])
+		end
 	end
 }
 
@@ -82,4 +87,5 @@ config = g.yaml_container('.crater/config.yaml')
 keychain = g.yaml_container('.crater/keychain.yaml')
 state = g.property_container{}
 
-behaviour[arg[1]](arg / g.slice(2) / g.unpack())
+method = behaviour[arg[1]] or behaviour["help"]
+method(arg / g.slice(2) / g.unpack())
