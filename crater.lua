@@ -11,7 +11,7 @@ local sh = require "sh"
 -- TODO .gitignore
 -- TODO cd to root directory
 
-local prompt, config, state
+local prompt, config, keychain, state
 
 behaviour = {
 	init=function()
@@ -23,9 +23,37 @@ behaviour = {
 			type=prompt("type (lua|love)"),
 			platforms=prompt("platforms (git, luarocks)"):split("%s*,%s*") / g.set()
 		}
+		keychain:set{}
 
 		if config.platforms["git"] then
-			
+			config.git_origin = prompt("git repository")
+			git("remote add origin " .. config.git_origin)
+
+			echo(keychain.path):tee(".gitignore")
+		end
+
+		if config.platforms["luarocks"] then
+			keychain.luarocks = prompt("luarocks API key")
+			local file = io.open("%s-%s.rockspec" % {config.name, config.version}, "w")
+			file:write([[
+package="%s"
+version="%s"
+source={
+	url="%s",
+	tag="%s"
+}
+description={
+	summary="none",
+	license="MIT"
+}
+build={
+	type="builtin",
+	modules={
+		
+	}
+}
+			]] % {config.name, config.version, config.git_origin, config.version})
+			file:close()
 		end
 	end
 }
@@ -49,6 +77,7 @@ function prompt(query, default_value)
 end
 
 config = g.yaml_container('.crater/config.yaml')
+keychain = g.yaml_container('.crater/keychain.yaml')
 state = g.property_container{}
 
 behaviour[arg[1]](arg / g.slice(2) / g.unpack())
