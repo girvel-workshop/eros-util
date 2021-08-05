@@ -3,9 +3,6 @@ local fnl = require "fnl"
 local yaml = require "lyaml"
 require "strong"
 
-local http = require "socket.http"
-local ltn12 = require "ltn12"
-
 local sh = require "sh"
 -- TODO dependencies
 -- TODO .gitignore
@@ -55,6 +52,11 @@ build={
 			]] % {config.name, config.version, config.git_origin, config.version})
 			file:close()
 		end
+	end,
+	commit=function(name)
+		print(git("add ."))
+		print(git('commit -m "%s"' % name))
+		print(git('push origin master'))
 	end
 }
 
