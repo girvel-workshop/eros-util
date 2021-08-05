@@ -130,4 +130,18 @@ _girvel.yaml_container =
 		})
 	end
 
+_girvel.property_container = 
+	fnl.docs{} ..
+	function(t)
+		-- TODO tk.copy(t, true)
+		return setmetatable(t, {
+			__index=function(self, index)
+				return self["get_" .. index](self)
+			end,
+			__newindex=function(self, index, value)
+				return self["set_" .. index](self, value)
+			end
+		})
+	end
+
 return _girvel

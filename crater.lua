@@ -49,17 +49,6 @@ function prompt(query, default_value)
 end
 
 config = g.yaml_container('.crater/config.yaml')
-
--- TODO property container
-state = setmetatable({
-	
-}, {
-	__index=function(self, index)
-		return self["get_" .. index](self)
-	end,
-	__newindex=function(self, index, value)
-		return self["set_" .. index](self, value)
-	end
-})
+state = g.property_container{}
 
 behaviour[arg[1]](arg / g.slice(2) / g.unpack())
