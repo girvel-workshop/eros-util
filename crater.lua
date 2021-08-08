@@ -8,7 +8,7 @@ local sh = require "sh"
 -- TODO .gitignore
 -- TODO cd to root directory
 
-local behaviour, prompt, config, keychain, state, rockspec
+local behaviour, prompt, config, keychain, state, rockspec, control
 
 behaviour = {
 	init=fnl.docs[[make current directory a crate]] .. function()
@@ -33,6 +33,9 @@ behaviour = {
 
 		if config.tech["luarocks"] then
 			keychain.luarocks = prompt("luarocks API key")
+		end
+
+		if config.build_systems['luarocks'] then
 			rockspec = g.file_container("%s-%s.rockspec" % {config.name, config.version})
 			rockspec:set([[
 package="%s"
@@ -53,6 +56,20 @@ build={
 }
 			]] % {config.name, config.version, config.git_origin, config.version})
 		end
+
+		if config.build_systems['dpkg'] then
+			control:set([[
+Package: %s
+Version: %s
+Section: custom
+Prority: optional
+Architecture: all
+Essential: no
+Installed-Size: 1024
+Maintainer: girvel
+Description: Launcher for a rock %s
+			]] % {config.name, config.version, config.name})
+		end
 	end,
 	
 	commit=fnl.docs[[alias for git add, commit & push]] .. function(name)
@@ -71,19 +88,24 @@ build={
 		
 	build=fnl.docs[[builds]] .. function(type)
 		type = type or "build"
-
-		for build_type, _ in pairs(config.build_systems) do
-			behaviour["build-" .. build_type]()
-		end
 		
 		local index = ({major=1, minor=2, build=3})[type]
 		local version = state.get_version()
 		version[index] = version[index] + 1
 		state.set_version(version)
+
+		for build_type, _ in pairs(config.build_systems) do
+			behaviour["build-" .. build_type]()
+		end
 	end,
 
 	["build-dpkg"]=function()
-		mkdir("-p .crater/build-dpkg/")
+		g.file_container(".crater/build-dpkg/usr/bin/crater"):set(
+			'#!/usr/bin/bash\nlua $(luarocks which crater | head -n 1) $@'
+		)
+		mkdir("-p .crater/build-dpkg/DEBIAN")
+		sh.command('dpkg-deb')("--build .crater/build-dpkg/")
+		mv("build-dpkg.debug")
 	end,
 	
 	help=fnl.docs[[show help]] .. function()
@@ -118,6 +140,7 @@ end
 config = g.yaml_container('.crater/config.yaml')
 keychain = g.yaml_container('.crater/keychain.yaml')
 rockspec = g.file_container(tostring(ls('*.rockspec')))
+control = g.file_container("control")
 
 state = {
 	get_version=function()
@@ -126,12 +149,21 @@ state = {
 	set_version=function(value)
 		local old_version = config.version
 		config.version = "%s.%s-%s" % value
-		rockspec.path = "%s-%s.rockspec" % {config.name, config.version}
-		mv("*.rockspec", rockspec.path)
-		rockspec:set(rockspec:get()
-			:gsub('version="%S*"', 'version="%s"' % config.version)
-			:gsub('tag="%S*"', 'tag="%s"' % config.version)
-		)
+
+		if config.build_systems["luarocks"] then
+			rockspec.path = "%s-%s.rockspec" % {config.name, config.version}
+			mv("*.rockspec", rockspec.path)
+			rockspec:set(rockspec:get()
+				:gsub('version="%S*"', 'version="%s"' % config.version)
+				:gsub('tag="%S*"', 'tag="%s"' % config.version)
+			)
+		end
+
+		if config.build_systems["dpkg"] then
+			control:set(control:get()
+				:gsub('Version: %S*', 'Version: ' .. config.version)
+			)
+		end
 	end
 }
 
