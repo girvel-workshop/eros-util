@@ -19,23 +19,20 @@ behaviour = {
 			version=prompt("version", "0.1-0"),
 			build_systems=prompt("build systems (love, luarocks, dpkg)", "luarocks")
 				:split("%s*,%s*") / g.set(),
-			tech=prompt("tech (git, luarocks)", "git, luarocks")
-				:split("%s*,%s*") / g.set()
+			luarocks=prompt("luarocks support (yes/no)", "yes") ~= "no"
 		}
 		keychain:set_yaml{}
 
-		if config.tech["git"] then
-			config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
-			git("remote add origin " .. config.git_origin)
+		config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
+		git("remote add origin " .. config.git_origin)
 
-			echo(keychain.path):tee("-a .gitignore")
-		end
+		echo(keychain.path):tee("-a .gitignore")
 
-		if config.tech["luarocks"] then
+		if config.luarocks then
 			keychain.luarocks = prompt("luarocks API key")
 		end
 
-		if config.build_systems['luarocks'] then
+		if config.build_systems.luarocks then
 			rockspec = g.file_container("%s-%s.rockspec" % {config.name, config.version})
 			rockspec:set([[
 package="%s"
@@ -57,7 +54,7 @@ build={
 			]] % {config.name, config.version, config.git_origin, config.version})
 		end
 
-		if config.build_systems['dpkg'] then
+		if config.build_systems.dpkg then
 			control:set([[
 Package: %s
 Version: %s
@@ -100,12 +97,24 @@ Description: Launcher for a rock %s
 	end,
 
 	["build-dpkg"]=function()
-		g.file_container(".crater/build-dpkg/usr/bin/crater"):set(
-			'#!/usr/bin/bash\nlua $(luarocks which crater | head -n 1) $@'
+		g.file_container(".crater/source-dpkg/usr/bin/" .. config.name):set(
+			'#!/usr/bin/bash\nlua $(luarocks which %s | head -n 1) $@'
+				% config.name
 		)
-		mkdir("-p .crater/build-dpkg/DEBIAN")
-		sh.command('dpkg-deb')("--build .crater/build-dpkg/")
-		mv("build-dpkg.debug")
+		chmod("+x .crater/source-dpkg/usr/bin/" .. config.name)
+		mkdir("-p .crater/source-dpkg/DEBIAN")
+		cp("control", ".crater/source-dpkg/DEBIAN/")
+		
+		print(sh.command('dpkg-deb')("--build .crater/source-dpkg"))
+		mkdir("-p .crater/build-dpkg")
+		mv(
+			".crater/source-dpkg.deb", 
+			'.crater/build-dpkg/%s-%s.deb' % {config.name, config.version}
+		)
+	end,
+
+	["install-dpkg"]=function()
+		
 	end,
 	
 	help=fnl.docs[[show help]] .. function()
