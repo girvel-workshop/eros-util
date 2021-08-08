@@ -1,6 +1,5 @@
 local fnl = require "fnl"
 local yaml = require "lyaml"
-local inspect = require "inspect"
 local exception = require "exception"
 
 local _girvel = {}
@@ -90,6 +89,11 @@ _girvel.join =
 		end
 		return result
 	end
+
+_girvel.inspect = 
+	fnl.docs{} ..
+	fnl.pipe() ..
+	require "inspect"
 
 _girvel.file_container =
 	fnl.docs{

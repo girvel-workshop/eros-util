@@ -1,2 +1,0 @@
-#!/usr/bin/bash
-lua $(luarocks which crater | head -n 1) $@

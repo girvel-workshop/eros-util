@@ -92,13 +92,13 @@ Description: Launcher for a rock %s
 		state.set_version(version)
 
 		for build_type, _ in pairs(config.build_systems) do
-			behaviour["build-" .. build_type]()
+			behaviour["build_" .. build_type]()
 		end
 	end,
 
-	["build-dpkg"]=function()
+	["build_dpkg"]=function()
 		g.file_container(".crater/source-dpkg/usr/bin/" .. config.name):set(
-			'#!/usr/bin/bash\nlua $(luarocks which %s | head -n 1) $@'
+			'#!/usr/bin/bash\nlua $(luarocks which %s | head -n 1) "$@"'
 				% config.name
 		)
 		chmod("+x .crater/source-dpkg/usr/bin/" .. config.name)
@@ -113,7 +113,11 @@ Description: Launcher for a rock %s
 		)
 	end,
 
-	["install-dpkg"]=function()
+	["build_luarocks"]=function()
+
+	end,
+
+	["install_dpkg"]=function()
 		
 	end,
 	
@@ -159,7 +163,7 @@ state = {
 		local old_version = config.version
 		config.version = "%s.%s-%s" % value
 
-		if config.build_systems["luarocks"] then
+		if config.build_systems.luarocks then
 			rockspec.path = "%s-%s.rockspec" % {config.name, config.version}
 			mv("*.rockspec", rockspec.path)
 			rockspec:set(rockspec:get()
@@ -168,7 +172,7 @@ state = {
 			)
 		end
 
-		if config.build_systems["dpkg"] then
+		if config.build_systems.dpkg then
 			control:set(control:get()
 				:gsub('Version: %S*', 'Version: ' .. config.version)
 			)
