@@ -158,6 +158,8 @@ _girvel.yaml_container =
 		})
 	end
 
+-- TODO as decorator
+-- TODO decorator is a decorator
 _girvel.property_container = 
 	fnl.docs{} ..
 	function(t)

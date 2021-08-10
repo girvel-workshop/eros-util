@@ -1,8 +1,8 @@
-luarocks: true
-name: crater
+version: 2.0-4
 git: true
 git_origin: github.com/girvel-workshop/crater
 build_systems:
   luarocks: true
   dpkg: true
-version: 2.0-4
+luarocks: true
+name: crater

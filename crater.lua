@@ -7,11 +7,12 @@ local sh = require "sh"
 -- TODO dependencies
 -- TODO .gitignore
 -- TODO cd to root directory
+-- TODO upload to luarocks
 
 local behaviour, prompt, config, keychain, state, rockspec, control
 
 behaviour = {
-	init=fnl.docs[[make current directory a crate]] .. function()
+	init=fnl.docs[[make current directory a crate]] .. function(self)
 		print(git("init"))
 
 		config:set_yaml{
@@ -69,13 +70,13 @@ Description: Launcher for a rock %s
 		end
 	end,
 	
-	commit=fnl.docs[[alias for git add, commit & push]] .. function(name)
+	commit=fnl.docs[[alias for git add, commit & push]] .. function(self, name)
 		print(git("add ."))
 		print(git('commit -m "%s"' % name))
 		print(git('push origin master'))
 	end,
 	
-	stat=fnl.docs[[show crate statistics]] .. function()
+	stat=fnl.docs[[show crate statistics]] .. function(self)
 		print("crate", config.name)
 		local content = find("./ -name '*.lua' -print0"):xargs("-0 cat")
 		print("Lines:", content:wc("-l"))
@@ -83,7 +84,7 @@ Description: Launcher for a rock %s
 		print("Chars:", content:wc("-m"))
 	end,
 		
-	build=fnl.docs[[builds]] .. function(type)
+	build=fnl.docs[[builds]] .. function(self, type)
 		type = type or "build"
 		
 		local index = ({major=1, minor=2, build=3})[type]
@@ -92,11 +93,11 @@ Description: Launcher for a rock %s
 		state.set_version(version)
 
 		for build_type, _ in pairs(config.build_systems) do
-			behaviour["build_" .. build_type]()
+			behaviour["build_" .. build_type](self)
 		end
 	end,
 
-	["build_dpkg"]=function()
+	build_dpkg=function(self)
 		g.file_container(".crater/source-dpkg/usr/bin/" .. config.name):set(
 			'#!/usr/bin/bash\nlua $(luarocks which %s | head -n 1) "$@"'
 				% config.name
@@ -109,19 +110,30 @@ Description: Launcher for a rock %s
 		mkdir("-p .crater/build-dpkg")
 		mv(
 			".crater/source-dpkg.deb", 
-			'.crater/build-dpkg/%s-%s.deb' % {config.name, config.version}
+			'.crater/build-dpkg/%s.deb' % state.get_full_name()
 		)
 	end,
 
-	["build_luarocks"]=function()
-
+	build_luarocks=function(self)
+		print(state.get_full_name())
+		print(luarocks("pack %s.rockspec" % state.get_full_name()))
 	end,
 
-	["install_dpkg"]=function()
-		
+	install=function(self)
+		for build_type, _ in pairs(config.build_systems) do
+			behaviour["install_" .. build_type](self)
+		end
+	end,
+
+	install_dpkg=function(self)
+		sudo("dpkg --install .crater/build-dpkg/%s.deb" % state.get_full_name())
+	end,
+
+	install_luarocks=function(self)
+		luarocks("install")
 	end,
 	
-	help=fnl.docs[[show help]] .. function()
+	help=fnl.docs[[show help]] .. function(self)
 		for name, f in pairs(behaviour) do
 			if fnl.docs[f] then
 				print(name, "-", fnl.docs[f])
@@ -177,8 +189,11 @@ state = {
 				:gsub('Version: %S*', 'Version: ' .. config.version)
 			)
 		end
+	end,
+	get_full_name=function()
+		return config.name .. "-" .. config.version
 	end
 }
 
 method = behaviour[arg[1]] or behaviour["help"]
-method(arg / g.slice(2) / g.unpack())
+method(behaviour, arg / g.slice(2) / g.unpack())
