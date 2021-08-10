@@ -142,7 +142,7 @@ Description: Launcher for a rock %s
 	end,
 
 	install_luarocks=function(self)
-		luarocks("install .crater/build-luarocks/%s.src.rock" % state.get_full_name())
+		luarocks("install .crater/build-luarocks/%s.src.rock --local" % state.get_full_name())
 	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
@@ -153,6 +153,10 @@ Description: Launcher for a rock %s
 				print(name)
 			end
 		end
+	end,
+
+	["--version"]=fnl.docs[[show version]] .. function(self)
+		print(config.version)
 	end
 }
 
