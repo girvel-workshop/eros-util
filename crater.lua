@@ -27,7 +27,11 @@ behaviour = {
 		config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
 		git("remote add origin " .. config.git_origin)
 
-		echo(keychain.path):tee("-a .gitignore")
+		gitignore:set(
+			{keychain.path, ".crater/build*", ".crater/source*"}
+				/ g.separate("\n") 
+				/ g.join()
+		)
 
 		if config.luarocks then
 			keychain.luarocks = prompt("luarocks API key")
@@ -78,10 +82,10 @@ Description: Launcher for a rock %s
 	
 	stat=fnl.docs[[show crate statistics]] .. function(self)
 		print("crate", config.name)
-		local content = find("./ -name '*.lua' -print0"):xargs("-0 cat")
-		print("Lines:", content:wc("-l"))
-		print("Words:", content:wc("-w"))
-		print("Chars:", content:wc("-m"))
+		local content = find("./ -name '*.lua' -print0") : xargs("-0 cat")
+		print("Lines:", content : wc("-l"))
+		print("Words:", content : wc("-w"))
+		print("Chars:", content : wc("-m"))
 	end,
 		
 	build=fnl.docs[[builds]] .. function(self, type)
@@ -115,7 +119,6 @@ Description: Launcher for a rock %s
 	end,
 
 	build_luarocks=function(self)
-		print(state.get_full_name())
 		print(luarocks("pack %s.rockspec" % state.get_full_name()))
 	end,
 
@@ -166,6 +169,7 @@ config = g.yaml_container('.crater/config.yaml')
 keychain = g.yaml_container('.crater/keychain.yaml')
 rockspec = g.file_container(tostring(ls('*.rockspec')))
 control = g.file_container("control")
+gitignore = g.file_container(".gitignore")
 
 state = {
 	get_version=function()
