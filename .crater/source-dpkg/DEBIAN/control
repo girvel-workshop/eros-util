@@ -1,9 +1,0 @@
-Package: crater
-Version: 2.0-6
-Section: custom
-Prority: optional
-Architecture: all
-Essential: no
-Installed-Size: 1024
-Maintainer: girvel
-Description: Launcher for a rock crater
