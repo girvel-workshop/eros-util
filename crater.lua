@@ -119,7 +119,16 @@ Description: Launcher for a rock %s
 	end,
 
 	build_luarocks=function(self)
+		print(git("add ."))
+		print(git("commit -m 'source for build %s'" % config.version))
+		print(git("tag -a '%s' -m 'version %s'" % {config.version, config.version}))
+		
+		print(git("push origin master"))
+		print(git("push origin --tags"))
+		
 		print(luarocks("pack %s.rockspec" % state.get_full_name()))
+		mkdir("-p .crater/build-luarocks")
+		mv("*.rock .crater/build-luarocks/")
 	end,
 
 	install=function(self)
@@ -133,7 +142,7 @@ Description: Launcher for a rock %s
 	end,
 
 	install_luarocks=function(self)
-		luarocks("install")
+		luarocks("install .crater/build-luarocks/%s.src.rock" % state.get_full_name())
 	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
