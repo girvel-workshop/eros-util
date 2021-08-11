@@ -1,6 +1,6 @@
-local g = require "_girvel"
 local fnl = require "fnl"
 local yaml = require "lyaml"
+local container = require "container"
 require "strong"
 
 local sh = require "sh"
@@ -19,7 +19,7 @@ behaviour = {
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
 			build_systems=prompt("build systems (love, luarocks, dpkg)", "luarocks")
-				:split("%s*,%s*") / g.set(),
+				:split("%s*,%s*") / fnl.set(),
 			luarocks=prompt("luarocks support (yes/no)", "yes") ~= "no"
 		}
 		keychain:set_yaml{}
@@ -29,8 +29,8 @@ behaviour = {
 
 		gitignore:set(
 			{keychain.path, ".crater/build*", ".crater/source*"}
-				/ g.separate("\n") 
-				/ g.join()
+				/ fnl.separate("\n") 
+				/ fnl.join()
 		)
 
 		if config.luarocks then
@@ -38,7 +38,7 @@ behaviour = {
 		end
 
 		if config.build_systems.luarocks then
-			rockspec = g.file_container("%s-%s.rockspec" % {config.name, config.version})
+			rockspec = container.file("%s-%s.rockspec" % {config.name, config.version})
 			rockspec:set([[
 package="%s"
 version="%s"
@@ -102,7 +102,7 @@ Description: Launcher for a rock %s
 	end,
 
 	build_dpkg=function(self)
-		g.file_container(".crater/source-dpkg/usr/bin/" .. config.name):set(
+		container.file(".crater/source-dpkg/usr/bin/" .. config.name):set(
 			'#!/usr/bin/bash\nlua $(luarocks which %s | head -n 1) "$@"'
 				% config.name
 		)
@@ -119,16 +119,7 @@ Description: Launcher for a rock %s
 	end,
 
 	build_luarocks=function(self)
-		print(git("add ."))
-		print(git("commit -m 'source for build %s'" % config.version))
-		print(git("tag -a '%s' -m 'version %s'" % {config.version, config.version}))
-		
-		print(git("push origin master"))
-		print(git("push origin --tags"))
-		
-		print(luarocks("pack %s.rockspec" % state.get_full_name()))
-		mkdir("-p .crater/build-luarocks")
-		mv("*.rock .crater/build-luarocks/")
+		print(luarocks("build --local"))
 	end,
 
 	install=function(self)
@@ -141,9 +132,7 @@ Description: Launcher for a rock %s
 		sudo("dpkg --install .crater/build-dpkg/%s.deb" % state.get_full_name())
 	end,
 
-	install_luarocks=function(self)
-		luarocks("install .crater/build-luarocks/%s.src.rock --local" % state.get_full_name())
-	end,
+	install_luarocks=function(self) end,
 	
 	help=fnl.docs[[show help]] .. function(self)
 		for name, f in pairs(behaviour) do
@@ -178,15 +167,15 @@ function prompt(query, default_value)
 	return input
 end
 
-config = g.yaml_container('.crater/config.yaml')
-keychain = g.yaml_container('.crater/keychain.yaml')
-rockspec = g.file_container(tostring(ls('*.rockspec')))
-control = g.file_container("control")
-gitignore = g.file_container(".gitignore")
+config = container.yaml('.crater/config.yaml')
+keychain = container.yaml('.crater/keychain.yaml')
+rockspec = container.file(tostring(ls('*.rockspec')))
+control = container.file("control")
+gitignore = container.file(".gitignore")
 
 state = {
 	get_version=function()
-		return config.version:gsub("-", ".") / "." / g.map(tonumber)
+		return config.version:gsub("-", ".") / "." / fnl.map(tonumber)
 	end,
 	set_version=function(value)
 		local old_version = config.version
@@ -213,4 +202,4 @@ state = {
 }
 
 method = behaviour[arg[1]] or behaviour["help"]
-method(behaviour, arg / g.slice(2) / g.unpack())
+method(behaviour, arg / fnl.slice(2) / fnl.unpack())

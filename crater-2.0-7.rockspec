@@ -11,6 +11,6 @@ description={
 build={
 	type="builtin",
 	modules={
-		
+		crater="crater.lua"
 	}
 }
