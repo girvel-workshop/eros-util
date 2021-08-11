@@ -132,7 +132,9 @@ Description: Launcher for a rock %s
 			return
 		end
 
-		love(". " .. ({...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join() or ""))
+		os.execute(
+			"love . " .. ({...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join() or "")
+		)
 	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
