@@ -19,26 +19,17 @@ behaviour = {
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
 			build_systems=prompt("build systems (love, luarocks, dpkg)", "luarocks")
-				:split("%s*,%s*") / fnl.set(),
-			luarocks=prompt("luarocks support (yes/no)", "yes") ~= "no"
+				:split("%s*,%s*") / fnl.set()
 		}
-		keychain:set_yaml{}
-
-		config.git_origin = prompt("git repository", tostring(git("remote get-url origin")))
-		git("remote add origin " .. config.git_origin)
 
 		gitignore:set(
-			{keychain.path, ".crater/build*", ".crater/source*"}
+			{".crater/build*", ".crater/source*"}
 				/ fnl.separate("\n") 
 				/ fnl.join()
 		)
 
-		if config.luarocks then
-			keychain.luarocks = prompt("luarocks API key")
-		end
-
 		if config.build_systems.luarocks then
-			rockspec = container.file("%s-%s.rockspec" % {config.name, config.version})
+			rockspec = container.file("%s.rockspec" % state.get_full_name())
 			rockspec:set([[
 package="%s"
 version="%s"
@@ -133,6 +124,15 @@ Description: Launcher for a rock %s
 	end,
 
 	install_luarocks=function(self) end,
+
+	launch=function(self, ...)
+		if not config.build_systems.love then
+			print "Launch is supported only for love projects"
+			return
+		end
+
+		love(". " + {...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join())
+	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
 		for name, f in pairs(behaviour) do
@@ -164,7 +164,6 @@ function prompt(query, default_value)
 end
 
 config = container.yaml('.crater/config.yaml')
-keychain = container.yaml('.crater/keychain.yaml')
 rockspec = container.file(tostring(ls('*.rockspec')))
 control = container.file("control")
 gitignore = container.file(".gitignore")
