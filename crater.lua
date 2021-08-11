@@ -142,10 +142,6 @@ Description: Launcher for a rock %s
 				print(name)
 			end
 		end
-	end,
-
-	["--version"]=fnl.docs[[show version]] .. function(self)
-		print(config.version)
 	end
 }
 
@@ -182,11 +178,11 @@ state = {
 		config.version = "%s.%s-%s" % value
 
 		if config.build_systems.luarocks then
-			rockspec.path = "%s-%s.rockspec" % {config.name, config.version}
+			rockspec.path = "%s.rockspec" % state.get_full_name()
 			mv("*.rockspec", rockspec.path)
 			rockspec:set(rockspec:get()
-				:gsub('version="%S*"', 'version="%s"' % config.version)
-				:gsub('tag="%S*"', 'tag="%s"' % config.version)
+				:gsub('version%s*=%s*"%S*"', 'version="%s"' % config.version)
+				:gsub('tag%s*=%s*"%S*"', 'tag="%s"' % config.version)
 			)
 		end
 
