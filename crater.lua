@@ -1,4 +1,5 @@
 local fnl = require "fnl"
+local tk = require "tk"
 local yaml = require "lyaml"
 local container = require "container"
 require "strong"
@@ -19,7 +20,7 @@ behaviour = {
 			name=prompt("project name", tostring(basename("$PWD"))),
 			version=prompt("version", "0.1-0"),
 			build_systems=prompt("build systems (love, luarocks, dpkg)", "luarocks")
-				:split("%s*,%s*") / fnl.set()
+				:split("%s*,%s*") / tk.set()
 		}
 
 		gitignore:set(
@@ -131,7 +132,7 @@ Description: Launcher for a rock %s
 			return
 		end
 
-		love(". " + {...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join())
+		love(". " .. ({...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join() or ""))
 	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
@@ -164,7 +165,7 @@ function prompt(query, default_value)
 end
 
 config = container.yaml('.crater/config.yaml')
-rockspec = container.file(tostring(ls('*.rockspec')))
+rockspec = container.file(tostring(ls('*.rockspec 2>/dev/null')))
 control = container.file("control")
 gitignore = container.file(".gitignore")
 
