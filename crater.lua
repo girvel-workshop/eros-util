@@ -108,23 +108,13 @@ Description: Launcher for a rock %s
 			".crater/source-dpkg.deb", 
 			'.crater/build-dpkg/%s.deb' % state.get_full_name()
 		)
+		
+		sudo("dpkg --install .crater/build-dpkg/%s.deb" % state.get_full_name())
 	end,
 
 	build_luarocks=function(self)
 		print(luarocks("build --local"))
 	end,
-
-	install=function(self)
-		for build_type, _ in pairs(config.build_systems) do
-			behaviour["install_" .. build_type](self)
-		end
-	end,
-
-	install_dpkg=function(self)
-		sudo("dpkg --install .crater/build-dpkg/%s.deb" % state.get_full_name())
-	end,
-
-	install_luarocks=function(self) end,
 
 	launch=function(self, ...)
 		if not config.build_systems.love then
