@@ -183,6 +183,10 @@ Description: Launcher for a rock %s
 			)
 		)
 	end,
+
+	set_version=fnl.docs[[set version]] .. function(self, version)
+		state.set_version(version:gsub("-", ".") / "." / fnl.map(tonumber))
+	end,
 	
 	help=fnl.docs[[show help]] .. function(self)
 		for name, f in pairs(behaviour) do
