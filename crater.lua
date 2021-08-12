@@ -6,9 +6,9 @@ require "strong"
 
 local sh = require "sh"
 -- TODO dependencies
--- TODO .gitignore
--- TODO cd to root directory
+-- TODO use root directory
 -- TODO upload to luarocks
+-- TODO rename 
 
 local behaviour, prompt, config, keychain, state, rockspec, control
 
@@ -116,6 +116,58 @@ Description: Launcher for a rock %s
 		print(luarocks("build --local"))
 	end,
 
+	build_love=function(self)
+		-- os.system("mkdir source")
+    -- os.system("cp -r ./* source")
+    -- os.chdir("source")
+    -- os.system(
+        -- "rm -rf documentation bin .git .gitignore README.md "
+        -- "war-routine.sublime-* eros/bin source build"
+        -- "*.exe *.love *.zip"
+    -- )
+    -- os.system("mkdir ../build")
+    -- print("Creating love file")
+    -- os.system(f"zip -9 -r ../build/{name}.love . -q")
+    -- os.chdir("..")
+    -- print("Creating exe file")
+    -- os.system(f"cat eros/bin/love.exe build/{name}.love > bin/{name}.exe")
+    -- print("Creating final zip archive")
+    -- os.system(f"rm -rf {name}.zip")
+    -- os.system(f"zip -9 -r {name}.zip bin -q")
+    -- print("Removing temp files")
+    -- os.system("rm -rf source")
+    -- os.system("rm -rf build")
+    -- print("Build finished!")
+
+		print("Copying sources")
+    mkdir(".crater/source-love")
+    cp("-r ./ .crater/source-love")
+    cd(".crater/source-love; rm -rf "
+			.. "documentation .git .gitignore README.md .crater "
+			.. "eros/bin *.exe *.love *.zip"
+    )
+
+		print("Building love file")
+    mkdir(".crater/build-love")
+    zip("-9 -r .crater/source-love/%s.love .crater/source-love -q" 
+    	% state.get_full_name()
+    )
+
+    print("Creating exe file")
+    cat("eros/bin/love.exe .crater/source-love/%s.love > .crater/build-love/%s.exe"
+			% {state.get_full_name(), state.get_full_name()}
+    )
+
+    print("Creating final zip archive")
+    cp("eros/bin/*.dll .crater/build-love")
+    zip("-9 -r .crater/build-love/%s.zip" % state.get_full_name())
+
+    print("Removing source files")
+    rm("-rf .crater/source-love")
+
+    print("Finishing build")
+	end,
+
 	launch=function(self, ...)
 		if not config.build_systems.love then
 			print "Launch is supported only for love projects"
@@ -123,7 +175,12 @@ Description: Launcher for a rock %s
 		end
 
 		os.execute(
-			"love . " .. ({...} / fnl.map[['"%s"' % it]] / fnl.separate(" ") / fnl.join() or "")
+			"love . " .. (
+				{...} 
+					/ fnl.map[['"%s"' % it]] 
+					/ fnl.separate(" ") 
+					/ fnl.join() or ""
+			)
 		)
 	end,
 	
