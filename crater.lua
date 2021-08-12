@@ -141,7 +141,7 @@ Description: Launcher for a rock %s
 
 		print("Copying sources")
     mkdir(".crater/source-love")
-    cp("-r ./ .crater/source-love")
+    cp("-r ./* .crater/source-love")
     cd(".crater/source-love; rm -rf "
 			.. "documentation .git .gitignore README.md .crater "
 			.. "eros/bin *.exe *.love *.zip"
@@ -162,8 +162,8 @@ Description: Launcher for a rock %s
     cp("eros/bin/*.dll .crater/build-love")
     zip("-9 -r .crater/build-love/%s.zip" % state.get_full_name())
 
-    print("Removing source files")
-    rm("-rf .crater/source-love")
+    -- print("Removing source files")
+    -- rm("-rf .crater/source-love")
 
     print("Finishing build")
 	end,
