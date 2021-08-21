@@ -1,8 +1,8 @@
 package = "crater"
-version="2.0-28"
+version="2.0-34"
 source = {
    url = "git://github.com/girvel-workshop/crater",
-   tag="2.0-28"
+   tag="2.0-34"
 }
 description = {
    summary = "none",

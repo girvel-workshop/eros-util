@@ -1,5 +1,5 @@
-version: 2.0-28
-build_systems:
-  luarocks: true
-  dpkg: true
 name: crater
+build_systems:
+  dpkg: true
+  luarocks: true
+version: 2.0-34

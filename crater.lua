@@ -117,53 +117,42 @@ Description: Launcher for a rock %s
 	end,
 
 	build_love=function(self)
-		-- os.system("mkdir source")
-    -- os.system("cp -r ./* source")
-    -- os.chdir("source")
-    -- os.system(
-        -- "rm -rf documentation bin .git .gitignore README.md "
-        -- "war-routine.sublime-* eros/bin source build"
-        -- "*.exe *.love *.zip"
-    -- )
-    -- os.system("mkdir ../build")
-    -- print("Creating love file")
-    -- os.system(f"zip -9 -r ../build/{name}.love . -q")
-    -- os.chdir("..")
-    -- print("Creating exe file")
-    -- os.system(f"cat eros/bin/love.exe build/{name}.love > bin/{name}.exe")
-    -- print("Creating final zip archive")
-    -- os.system(f"rm -rf {name}.zip")
-    -- os.system(f"zip -9 -r {name}.zip bin -q")
-    -- print("Removing temp files")
-    -- os.system("rm -rf source")
-    -- os.system("rm -rf build")
-    -- print("Build finished!")
-
 		print("Copying sources")
-    mkdir(".crater/source-love")
+    mkdir("-p .crater/source-love")
     cp("-r ./* .crater/source-love")
-    cd(".crater/source-love; rm -rf "
-			.. "documentation .git .gitignore README.md .crater "
-			.. "eros/bin *.exe *.love *.zip"
+    rm("-rf" ..
+			{"documentation", ".git*", "README.md", ".crater", "eros/bin",
+			 "*.exe", "*.love", "*.zip"}
+			 	/ fnl.map[[" .crater/source-love/" .. it]]
+			  / fnl.join()
     )
+
+    print("Copying libraries")
+    for _, l in ipairs(config.build_systems.love.dependencies) do
+			print("- " .. l)
+			cp(
+				tostring(luarocks("which " .. l) : head("-n 1")) 
+				.. " .crater/source-love/"
+			)
+    end
 
 		print("Building love file")
-    mkdir(".crater/build-love")
-    zip("-9 -r .crater/source-love/%s.love .crater/source-love -q" 
-    	% state.get_full_name()
-    )
+    mkdir("-p .crater/build-love")
+    cd(".crater/source-love; "
+    .. "zip -9 -r ../build-love/%s.love . -q" % config.name)
 
     print("Creating exe file")
-    cat("eros/bin/love.exe .crater/source-love/%s.love > .crater/build-love/%s.exe"
-			% {state.get_full_name(), state.get_full_name()}
+    cat(
+    	"eros/bin/love.exe .crater/build-love/%s.love > .crater/build-love/%s.exe"
+			% {config.name, config.name}  -- TODO fnl.fill
     )
+    rm(".crater/build-love/*.love")
 
     print("Creating final zip archive")
     cp("eros/bin/*.dll .crater/build-love")
-    zip("-9 -r .crater/build-love/%s.zip" % state.get_full_name())
-
-    -- print("Removing source files")
-    -- rm("-rf .crater/source-love")
+    mkdir("-p .crater/zip-love")
+    cd(".crater/build-love; "
+    .. "zip -9 -r ../zip-love/%s.zip . -q" % config.name)
 
     print("Finishing build")
 	end,
@@ -224,7 +213,7 @@ gitignore = container.file(".gitignore")
 
 state = {
 	get_version=function()
-		return config.version:gsub("-", ".") / "." / fnl.map(tonumber)
+		return config.version:gsub("-", ".") / "." / fnl.map[[tonumber(it)]]
 	end,
 	set_version=function(value)
 		local old_version = config.version
